@@ -1,114 +1,43 @@
-[index.html](https://github.com/user-attachments/files/27369110/index.html)
-<!DOCTYPE html>
+עע<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>מבזקי השעה - פאנל עדכונים</title>
+    <title>מבזקי השעה</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; text-align: center; padding: 20px; margin: 0; }
-        .container { max-width: 500px; margin: 20px auto; background: white; padding: 30px; border-radius: 15px; border-top: 8px solid #d32f2f; box-shadow: 0 4px 20px rgba(0,0,0,0.15); position: relative; }
-        
-        h1 { color: #d32f2f; margin-bottom: 5px; font-size: 28px; }
-        .editor-tag { color: #666; font-weight: bold; margin-bottom: 20px; background: #f8f9fa; padding: 8px; border-radius: 5px; border: 1px solid #ddd; display: inline-block; }
-        
-        textarea { width: 100%; height: 110px; padding: 15px; border-radius: 10px; border: 2px solid #ccc; font-size: 18px; box-sizing: border-box; resize: none; margin-bottom: 15px; font-family: inherit; }
-        textarea:focus { border-color: #d32f2f; outline: none; }
-        
-        .btn { background: #d32f2f; color: white; border: none; padding: 18px; width: 100%; font-size: 22px; border-radius: 10px; cursor: pointer; font-weight: bold; transition: background 0.2s; }
-        .btn:hover { background: #b71c1c; }
-        .btn:active { transform: scale(0.98); }
-
-        #list { margin-top: 30px; text-align: right; }
-        .msg { background: white; padding: 15px; margin-bottom: 12px; border-right: 6px solid #d32f2f; border-radius: 5px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); animation: fadeIn 0.4s ease; }
-        .msg-user { font-weight: bold; color: #d32f2f; font-size: 14px; }
-        .msg-content { display: block; margin-top: 5px; font-size: 18px; color: #333; }
-        .msg-time { font-size: 11px; color: #999; display: block; margin-top: 8px; }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* כפתור חץ למטה */
-        #scrollBtn {
-            display: none; position: fixed; bottom: 30px; left: 30px; z-index: 99;
-            border: none; background-color: #d32f2f; color: white; cursor: pointer;
-            padding: 15px; border-radius: 50%; width: 50px; height: 50px; font-size: 20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.3s;
-        }
-        #scrollBtn:hover { background-color: #b71c1c; transform: scale(1.1); }
+        body { font-family: sans-serif; background: #f0f2f5; text-align: center; padding: 20px; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        textarea { width: 100%; height: 100px; margin-bottom: 10px; padding: 10px; box-sizing: border-box; font-size: 16px; }
+        .btn { background: #d32f2f; color: white; border: none; padding: 10px 20px; cursor: pointer; width: 100%; font-size: 18px; font-weight: bold; }
+        #list { margin-top: 20px; text-align: right; }
+        .msg { background: #fff; padding: 10px; border-bottom: 1px solid #ddd; margin-bottom: 5px; }
     </style>
 </head>
 <body>
+    <div class="container">
+        <h1>מבזקי השעה</h1>
+        <textarea id="newsInput" placeholder="הקלד מבזק חדש..."></textarea>
+        <button class="btn" onclick="addNews()">פרסם מבזק</button>
+        <div id="list"></div>
+    </div>
 
-<button onclick="scrollToTop()" id="scrollBtn">⬇</button>
-
-<div class="container">
-    <h1>מבזקי השעה</h1>
-    <div class="editor-tag">מערכת מבזקי השעה | עורך תורן</div>
-    
-    <textarea id="newsInput" placeholder="מה קרה עכשיו? הקלד מבזק..."></textarea>
-    <button class="btn" onclick="addNews()">פרסם מבזק</button>
-    
-    <div id="list"></div>
-</div>
-
-<script>
-    // טעינה מהזיכרון המקומי ברגע שהדף עולה
-    window.onload = function() {
-        const savedData = JSON.parse(localStorage.getItem('mivzakei_hashaa_data') || "[]");
-        savedData.forEach(item => displayMessage(item));
-    };
-
-    // פונקציית פרסום
-    function addNews() {
-        const text = document.getElementById('newsInput').value;
-        if (!text.trim()) return;
-
-        const newsObj = {
-            user: "מבזקי השעה",
-            content: text,
-            time: new Date().toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'})
-        };
-
-        // שמירה בזיכרון (LocalStorage)
-        let allNews = JSON.parse(localStorage.getItem('mivzakei_hashaa_data') || "[]");
-        allNews.unshift(newsObj);
-        localStorage.setItem('mivzakei_hashaa_data', JSON.stringify(allNews));
-
-        // הצגה על המסך
-        displayMessage(newsObj, true);
-        document.getElementById('newsInput').value = "";
-    }
-
-    function displayMessage(data, isNew = false) {
-        const div = document.createElement('div');
-        div.className = 'msg';
-        div.innerHTML = `
-            <span class="msg-user">${data.user}</span>
-            <span class="msg-content">${data.content}</span>
-            <span class="msg-time">${data.time}</span>
-        `;
-        
-        const list = document.getElementById('list');
-        if (isNew) {
-            list.insertBefore(div, list.firstChild);
-        } else {
-            list.appendChild(div);
+    <script>
+        function addNews() {
+            const text = document.getElementById('newsInput').value;
+            if (!text.trim()) return;
+            const newsObj = {
+                content: text,
+                time: new Date().toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'})
+            };
+            displayMessage(newsObj);
+            document.getElementById('newsInput').value = "";
         }
-    }
 
-    // ניהול החץ למטה
-    window.onscroll = function() {
-        let b = document.getElementById("scrollBtn");
-        if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) {
-            b.style.display = "block";
-        } else {
-            b.style.display = "none";
+        function displayMessage(data) {
+            const div = document.createElement('div');
+            div.className = 'msg';
+            div.innerHTML = `<strong>${data.time}:</strong> <span>${data.content}</span>`;
+            document.getElementById('list').prepend(div);
         }
-    };
-
-    function scrollToTop() {
-        window.scrollTo({top: 0, behavior: 'smooth'});
-    }
-</script>
-
+    </script>
 </body>
 </html>
