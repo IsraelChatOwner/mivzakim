@@ -69,13 +69,12 @@
     </div>
 
     <script>
-        // ניהול מונה צופים אמין
+        // ניהול מונה צופים אמין (מבוסס מכשיר וזמן)
         function setupRealCounter() {
             let visitors = localStorage.getItem('total_unique_visitors') || 142;
             let lastVisit = localStorage.getItem('last_visit_time');
             let now = new Date().getTime();
             
-            // המונה עולה רק אם עברה שעה מאז הביקור האחרון
             if (!lastVisit || (now - lastVisit > 3600000)) {
                 visitors = parseInt(visitors) + 1;
             }
@@ -122,11 +121,9 @@
             const group = document.getElementById('react-group-' + newsId);
             if (group.classList.contains('locked')) return;
 
-            // עדכון המונה ל-1
             let countSpan = btn.querySelector('span');
             countSpan.innerText = "1";
             
-            // נעילה הרמטית של המבזק הזה למשתמש
             group.classList.add('locked');
             btn.classList.add('selected');
         }
