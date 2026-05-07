@@ -2,111 +2,143 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>מבזקי השעה - פאנל עדכונים</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מבזקי השעה</title>
+    <!-- חיבור לספריות Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; text-align: center; padding: 20px; margin: 0; }
-        .container { max-width: 500px; margin: 20px auto; background: white; padding: 30px; border-radius: 15px; border-top: 8px solid #d32f2f; box-shadow: 0 4px 20px rgba(0,0,0,0.15); position: relative; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; color: #1c1e21; }
+        .container { max-width: 700px; margin: auto; }
         
-        h1 { color: #d32f2f; margin-bottom: 5px; font-size: 28px; }
-        .editor-tag { color: #666; font-weight: bold; margin-bottom: 20px; background: #f8f9fa; padding: 8px; border-radius: 5px; border: 1px solid #ddd; display: inline-block; }
-        
-        textarea { width: 100%; height: 110px; padding: 15px; border-radius: 10px; border: 2px solid #ccc; font-size: 18px; box-sizing: border-box; resize: none; margin-bottom: 15px; font-family: inherit; }
-        textarea:focus { border-color: #d32f2f; outline: none; }
-        
-        .btn { background: #d32f2f; color: white; border: none; padding: 18px; width: 100%; font-size: 22px; border-radius: 10px; cursor: pointer; font-weight: bold; transition: background 0.2s; }
-        .btn:hover { background: #b71c1c; }
-        .btn:active { transform: scale(0.98); }
-
-        #list { margin-top: 30px; text-align: right; }
-        .msg { background: white; padding: 15px; margin-bottom: 12px; border-right: 6px solid #d32f2f; border-radius: 5px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); animation: fadeIn 0.4s ease; }
-        .msg-user { font-weight: bold; color: #d32f2f; font-size: 14px; }
-        .msg-content { display: block; margin-top: 5px; font-size: 18px; color: #333; }
-        .msg-time { font-size: 11px; color: #999; display: block; margin-top: 8px; }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* כפתור חץ למטה */
-        #scrollBtn {
-            display: none; position: fixed; bottom: 30px; left: 30px; z-index: 99;
-            border: none; background-color: #d32f2f; color: white; cursor: pointer;
-            padding: 15px; border-radius: 50%; width: 50px; height: 50px; font-size: 20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.3s;
+        .breaking-news-bar { 
+            background-color: #d93025; color: white; padding: 12px; 
+            text-align: center; font-weight: bold; border-radius: 8px; 
+            margin-bottom: 15px; animation: blinker 1.5s linear infinite;
+            font-size: 18px;
         }
-        #scrollBtn:hover { background-color: #b71c1c; transform: scale(1.1); }
+        @keyframes blinker { 50% { opacity: 0.5; } }
+
+        .header { background-color: #003366; color: white; padding: 25px; text-align: center; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .mivzak { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-right: 6px solid #003366; }
+        .time { font-size: 13px; color: #65676b; font-weight: bold; }
+        
+        .reactions { margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; display: flex; gap: 10px; }
+        .reaction-btn { cursor: pointer; background: #f0f2f5; border: 1px solid #ddd; padding: 5px 12px; border-radius: 20px; font-size: 14px; }
+
+        .admin-section { background: white; padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 3px solid #003366; display: none; }
+        textarea { width: 100%; height: 100px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; padding: 10px; font-size: 16px; resize: none; box-sizing: border-box; }
+        .emoji-bar { margin-bottom: 10px; }
+        .emoji-item { cursor: pointer; font-size: 20px; padding: 5px; border: 1px solid #eee; border-radius: 5px; margin-left: 5px; background: #fafafa; }
+        .btn-main { background-color: #003366; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; }
+        .login-link { color: #888; font-size: 11px; cursor: pointer; text-decoration: underline; }
     </style>
 </head>
 <body>
 
-<button onclick="scrollToTop()" id="scrollBtn">⬇</button>
-
 <div class="container">
-    <h1>מבזקי השעה</h1>
-    <div class="editor-tag">מערכת מבזקי השעה | עורך תורן</div>
+    <div style="text-align: left;"><span class="login-link" onclick="checkAdmin()">כניסת מנהל</span></div>
     
-    <textarea id="newsInput" placeholder="מה קרה עכשיו? הקלד מבזק..."></textarea>
-    <button class="btn" onclick="addNews()">פרסם מבזק</button>
-    
-    <div id="list"></div>
+    <div class="breaking-news-bar">● מבזק דחוף: עדכונים שוטפים מהשטח ●</div>
+
+    <div class="header">
+        <h1>מבזקי השעה 📢</h1>
+    </div>
+
+    <div id="adminArea" class="admin-section">
+        <h3>הוספת מבזק חדש</h3>
+        <textarea id="newsText" placeholder="מה קרה עכשיו?"></textarea>
+        
+        <div class="emoji-bar">
+            <span class="emoji-item" onclick="addEmoji('📢')">📢</span>
+            <span class="emoji-item" onclick="addEmoji('🚨')">🚨</span>
+            <span class="emoji-item" onclick="addEmoji('❤️')">❤️</span>
+            <span class="emoji-item" onclick="addEmoji('✅')">✅</span>
+        </div>
+
+        <button class="btn-main" onclick="postNews()">פרסם מבזק לעולם</button>
+    </div>
+
+    <div id="mivzakimList"></div>
 </div>
 
 <script>
-    // טעינה מהזיכרון המקומי ברגע שהדף עולה
-    window.onload = function() {
-        const savedData = JSON.parse(localStorage.getItem('mivzakei_hashaa_data') || "[]");
-        savedData.forEach(item => displayMessage(item));
+    // הגדרות ה-Firebase שלך
+    const firebaseConfig = {
+        apiKey: "AIzaSyCV2ZeLm04DFrDWD1fDgfv0Ft71YrGqpFs",
+        authDomain: "mivzakim-f35b2.firebaseapp.com",
+        databaseURL: "https://mivzakim-f35b2-default-rtdb.firebaseio.com",
+        projectId: "mivzakim-f35b2",
+        storageBucket: "mivzakim-f35b2.firebasestorage.app",
+        messagingSenderId: "264174571876",
+        appId: "1:264174571876:web:16117e4a7e90b7f7c56a71",
+        measurementId: "G-S5WPZTWEGE"
     };
 
-    // פונקציית פרסום
-    function addNews() {
-        const text = document.getElementById('newsInput').value;
-        if (!text.trim()) return;
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-        const newsObj = {
-            user: "מבזקי השעה",
-            content: text,
-            time: new Date().toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'})
-        };
-
-        // שמירה בזיכרון (LocalStorage)
-        let allNews = JSON.parse(localStorage.getItem('mivzakei_hashaa_data') || "[]");
-        allNews.unshift(newsObj);
-        localStorage.setItem('mivzakei_hashaa_data', JSON.stringify(allNews));
-
-        // הצגה על המסך
-        displayMessage(newsObj, true);
-        document.getElementById('newsInput').value = "";
+    function checkAdmin() {
+        if (prompt("סיסמת מנהל:") === "2626") {
+            document.getElementById('adminArea').style.display = 'block';
+        }
     }
 
-    function displayMessage(data, isNew = false) {
+    function addEmoji(emoji) {
+        const txt = document.getElementById('newsText');
+        if (!txt.value.includes(emoji)) txt.value += " " + emoji;
+    }
+
+    function postNews() {
+        const text = document.getElementById('newsText').value;
+        if (!text) return;
+
+        const now = new Date();
+        const time = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+
+        db.ref('posts').push({
+            text: text,
+            time: time,
+            likes: { "👍": 0, "❤️": 0 }
+        });
+
+        document.getElementById('newsText').value = "";
+    }
+
+    db.ref('posts').on('child_added', (snapshot) => {
+        const data = snapshot.val();
+        const id = snapshot.key;
+        renderPost(id, data);
+        document.title = "🔴 מבזק חדש!";
+        setTimeout(() => { document.title = "מבזקי השעה"; }, 3000);
+    });
+
+    function renderPost(id, data) {
         const div = document.createElement('div');
-        div.className = 'msg';
+        div.className = 'mivzak';
+        div.id = id;
         div.innerHTML = `
-            <span class="msg-user">${data.user}</span>
-            <span class="msg-content">${data.content}</span>
-            <span class="msg-time">${data.time}</span>
+            <div class="time">${data.time}</div>
+            <div style="font-size:18px; margin-top:10px;">${data.text}</div>
+            <div class="reactions">
+                <button class="reaction-btn" onclick="updateLike('${id}', '👍')">👍 <span id="l-${id}-👍">${data.likes['👍'] || 0}</span></button>
+                <button class="reaction-btn" onclick="updateLike('${id}', '❤️')">❤️ <span id="l-${id}-❤️">${data.likes['❤️'] || 0}</span></button>
+            </div>
         `;
-        
-        const list = document.getElementById('list');
-        if (isNew) {
-            list.insertBefore(div, list.firstChild);
-        } else {
-            list.appendChild(div);
-        }
+        document.getElementById('mivzakimList').prepend(div);
     }
 
-    // ניהול החץ למטה
-    window.onscroll = function() {
-        let b = document.getElementById("scrollBtn");
-        if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) {
-            b.style.display = "block";
-        } else {
-            b.style.display = "none";
-        }
-    };
-
-    function scrollToTop() {
-        window.scrollTo({top: 0, behavior: 'smooth'});
+    function updateLike(id, type) {
+        const ref = db.ref(`posts/${id}/likes/${type}`);
+        ref.transaction(current => (current || 0) + 1);
     }
+
+    db.ref('posts').on('child_changed', (snapshot) => {
+        const data = snapshot.val();
+        const id = snapshot.key;
+        document.getElementById(`l-${id}-👍`).innerText = data.likes['👍'] || 0;
+        document.getElementById(`l-${id}-❤️`).innerText = data.likes['❤️'] || 0;
+    });
 </script>
 
 </body>
